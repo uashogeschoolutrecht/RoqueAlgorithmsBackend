@@ -1,0 +1,15 @@
+﻿{
+  "whitelist": [
+    "https://www.nos.nl",
+    "https://www.rivm.nl"
+  ],
+  "seed": [
+    "https://www.apokalypsnu.nl",
+    "https://www.ninefornews.nl",
+    "http://www.bovendien.com",
+    "https://www.xandernieuws.net",
+    "https://www.niburu.co",
+    "https://www.worldunity.me",
+    "https://www.frontnieuws.com"
+  ]
+}

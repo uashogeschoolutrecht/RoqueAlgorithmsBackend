@@ -1,0 +1,6 @@
+{
+  "DatabaseConnectionString": "<Database-connection>",
+  "BingSearchApi": "<API key of Bing web searchAPI>",
+  "GoogleSearchApi": "<API Key of google search api>",
+  "GoogleSearchConsoleId": "<console ID of google search engine>"
+}
