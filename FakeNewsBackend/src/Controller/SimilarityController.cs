@@ -99,7 +99,6 @@ public class SimilarityController
             throw new JsonElementParseException("Could not find Similarity");
         
         var sims = sim.EnumerateArray()
-            .Where(el => el.GetProperty("similarity").GetRawText().Length > 0)
             .Select(el => GenerateSimilarity(orginalPage, 
                 foundPages.First(p => p.Url == el.GetProperty("url").GetRawText()), 
                 el.GetProperty("score").GetSingle()
