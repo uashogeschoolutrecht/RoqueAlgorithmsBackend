@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using FakeNewsBackend.Common;
 using FakeNewsBackend.Common.exceptions;
 using FakeNewsBackend.Common.Extensions;
@@ -97,11 +98,10 @@ public class SimilarityController
             throw new JsonElementParseException("Similarity Json is wrong");
         if (!document.RootElement.TryGetProperty("similarities", out var sim))
             throw new JsonElementParseException("Could not find Similarity");
-        
         var sims = sim.EnumerateArray()
             .Select(el => GenerateSimilarity(orginalPage, 
-                foundPages.First(p => p.Url == el.GetProperty("url").GetRawText()), 
-                el.GetProperty("sim").GetSingle()
+                foundPages.First(p => p.Url.Equals(el.GetProperty("url").GetString())), 
+                Single.Parse(el.GetProperty("sim").GetString(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture)
                 ));
         return sims;
     }
