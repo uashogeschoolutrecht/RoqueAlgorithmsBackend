@@ -207,7 +207,6 @@ public class SiteMapController
                 _sitemapService.SaveGenerateProgress(prog);
                 Thread.Sleep(_random.Next(10000,15000));
             }
-            Console.WriteLine($"Now on: {prog.LinksOnWebsite[i].url}");
             prog.LinksVisited.Add(prog.LinksOnWebsite[i]);
             var requestResultLoop = await _httpController.MakeGetRequest(prog.LinksOnWebsite[i].url);
             requestMade++;

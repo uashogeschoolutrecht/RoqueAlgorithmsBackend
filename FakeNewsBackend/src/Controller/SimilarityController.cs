@@ -81,7 +81,6 @@ public class SimilarityController
                 url = page.Url
             });
         var Json = JsonConvert.SerializeObject(foundWebPages);
-        Console.WriteLine(Json);
         IDictionary<string, string> body = new Dictionary<string, string>
         {
             { "original_article", Encode(orginalPage.MainContent) },
