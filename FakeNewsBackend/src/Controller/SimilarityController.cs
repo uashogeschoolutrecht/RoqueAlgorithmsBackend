@@ -101,7 +101,7 @@ public class SimilarityController
         var sims = sim.EnumerateArray()
             .Select(el => GenerateSimilarity(orginalPage, 
                 foundPages.First(p => p.Url == el.GetProperty("url").GetRawText()), 
-                el.GetProperty("score").GetSingle()
+                el.GetProperty("sim").GetSingle()
                 ));
         return sims;
     }
