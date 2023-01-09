@@ -80,7 +80,7 @@ namespace FakeNewsBackend
                 var t1 = Task.Run(async () => await SetUpWebsites());
                 var t2 = Task.Run(async () => await ThroughWebsites());
 
-                await Task.WhenAll( t2);
+                await Task.WhenAll(t1, t2);
                 Console.WriteLine("Done");
             }
             else
