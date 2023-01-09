@@ -76,8 +76,8 @@ namespace FakeNewsBackend
                 _logger.Info("Seeding the database.");
                 await SeedDatabase();
             }
-            if(!true){
-                // var t1 = Task.Run(async () => await SetUpWebsites());
+            if(true){
+                var t1 = Task.Run(async () => await SetUpWebsites());
                 var t2 = Task.Run(async () => await ThroughWebsites());
 
                 await Task.WhenAll( t2);
