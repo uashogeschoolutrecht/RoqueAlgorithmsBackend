@@ -77,7 +77,7 @@ public class SimilarityController
             page => new SimilarityDTO()
             {
                 article = page.MainContent,
-                Language = Mapper.LanguageToString(page.Language),
+                language = Mapper.LanguageToString(page.Language),
                 url = page.Url
             });
         var Json = JsonConvert.SerializeObject(foundWebPages);

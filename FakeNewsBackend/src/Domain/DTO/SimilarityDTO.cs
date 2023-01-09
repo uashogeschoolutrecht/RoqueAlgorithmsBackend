@@ -5,6 +5,6 @@ namespace FakeNewsBackend.Domain.DTO;
 public class SimilarityDTO
 {
     public string url;
-    public string Language;
+    public string language;
     public string article;
 }

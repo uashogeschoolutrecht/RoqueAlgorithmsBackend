@@ -76,37 +76,11 @@ namespace FakeNewsBackend
                 _logger.Info("Seeding the database.");
                 await SeedDatabase();
             }
-            if(true){
-                var t1 = Task.Run(async () => await SetUpWebsites());
-                var t2 = Task.Run(async () => await ThroughWebsites());
+            var t1 = Task.Run(async () => await SetUpWebsites());
+            var t2 = Task.Run(async () => await ThroughWebsites());
 
-                await Task.WhenAll(t1, t2);
-                Console.WriteLine("Done");
-            }
-            else
-            {
-                try
-                {
-                    string original =
-"https://www.rivm.nl/coronavirus-covid-19/testen";
-                    var originalPage = await _webController.RequestWebPage(original, DateTime.MinValue);
-                    Console.WriteLine(originalPage.ToString());
-//                     
-//                     Console.WriteLine("------------------------------------");
-//                     Console.WriteLine(originalPage.DatePosted.ToString());
-                    // string found =
-                    //     "https://worldunity.me/amerikaanse-toestanden/";
-                    // var foundPage = await _webController.RequestWebPage(found, DateTime.MinValue);
-                    // Console.WriteLine(StringLiteral.ToLiteral(foundPage.MainContent) + foundPage.MainContent.Length);
-                    
-                    // var sim = await _similarityController.GetSimilarityScore(originalPage, foundPage);
-                    // Console.WriteLine(sim.ToString());
-                }
-                catch (Exception e)
-                {
-                    _logger.Warn(e, "Something went wrong");
-                }
-            }
+            await Task.WhenAll(t1, t2);
+            Console.WriteLine("Done");
         }
 
         public async Task<int> SetUpWebsites()
@@ -244,34 +218,7 @@ namespace FakeNewsBackend
                     links.ToList(), false);
                 Console.WriteLine($"Getting similarity scores for article {item.url},\n{foundLinks.Count} times");
                 Console.WriteLine($"Article length: {originalPage.MainContent.Length}");
-                if (!false)
-                {
-                    for (var i = 0; i < foundLinks.Count; i++)
-                    {
-                        var foundPage = foundLinks[i];
-
-                        Console.WriteLine($"Getting similarity score of: {foundPage.Url}");
-                        if (foundPage.MainContent == "Not Found")
-                            continue;
-
-                        if (_similarityController.Exists(originalPage, foundPage))
-                            continue;
-                        Console.WriteLine($"Article length: {foundPage.MainContent.Length}");
-                        if (foundPage.MainContent.Length < minimumArticlelength ||
-                            foundPage.MainContent.Length > maximumArticlelength)
-                            continue;
-
-                        var similarity = _similarityController.GetSimilarityScore(originalPage, foundPage);
-
-                        while (!similarity.IsCompleted)
-                        {
-                            await Task.Delay(25);
-                        }
-                        await HandleSimilarity(similarity.Result, item);
-                    }
-                    return true;
-                }
-
+                
                 var filtered = foundLinks.Where(page =>
                 {
                     if (_similarityController.Exists(originalPage, page))
