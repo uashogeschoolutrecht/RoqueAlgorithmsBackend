@@ -70,6 +70,10 @@ public class SiteMapController
         {
             _logger.Error(e,"Xml parsing failed: {Site}", site);
         }
+        catch (XmlDocumentException e) 
+        {
+             _logger.Error(e,"No xml was given: {Site}", site);
+        }
         catch (SiteMapException e)
         {
             _logger.Error(e,"There was no sitemap document for: {Site}", site);
