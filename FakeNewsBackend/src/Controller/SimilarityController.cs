@@ -105,18 +105,6 @@ public class SimilarityController
                 ));
         return sims;
     }
-    /*
-     * {
-     *  similarities : [
-     *      similarty : {
-     *          url : "url",
-     *          score : 0.9
-     *      }
-     *      ...
-     * ]
-     * [url : 0.9,
-     * 
-     */
     /// <summary>
     /// Checks if Similarity already exists.
     /// </summary>

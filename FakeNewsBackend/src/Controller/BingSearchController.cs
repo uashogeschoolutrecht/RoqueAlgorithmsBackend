@@ -15,13 +15,16 @@ public class BingSearchController : ISearchController
     private static readonly string BASE_URL = "https://api.bing.microsoft.com/v7.0/search";
     private static readonly int NUMBER_RESULTS = 10;
     private static readonly int BING_SEARCH_LIMIT = 1000;
-    
+    private int totalSearches = 0;
     public BingSearchController(HttpController httpController)
     {
         _httpController = httpController;
     }
     public async Task<IEnumerable<UrlItemDTO>> SearchTitle(string title, string originalSite)
     {
+        if(totalSearches >= BING_SEARCH_LIMIT)
+            System.Environment.Exit(0); 
+
         var uriBuilder = new UriBuilder(BASE_URL);
         uriBuilder.Query = new StringBuilder()
             .Append($"q=`{HttpUtility.UrlEncode(title)}`")
@@ -31,7 +34,8 @@ public class BingSearchController : ISearchController
         var headers = new Dictionary<string, string>();
         headers.Add("Ocp-Apim-Subscription-Key", API_KEY);
         var response = await _httpController.MakeGetRequest(uriBuilder.ToString(), headers);
-
+        totalSearches++;
+        
         if(!JsonDocumentExtension.TryParse(response.content, out var jsonResult))
             throw new JsonElementParseException($"Invalid JSON: {response.content}");
         

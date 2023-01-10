@@ -78,9 +78,16 @@ public class HttpController
                                    ex is TaskCanceledException)
         {
             _logger.Error(ex, "[GET] Request failed: {Link}", link);
-            Console.WriteLine(ex);
-            Console.WriteLine("Timed out: " + link);
             TripCircuit(reason: "Timed out");
+            return new HttpDTO
+            {
+                content = UNAVAILABLE,
+                Response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "[GET] Request failed: {Link}", link);
             return new HttpDTO
             {
                 content = UNAVAILABLE,
@@ -104,13 +111,6 @@ public class HttpController
         try
         {
             await semaphore.WaitAsync();
-
-            if (IsTripped())
-                return new HttpDTO
-                {
-                    content = UNAVAILABLE,
-                    Response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-                };
 
             HttpContent content = new FormUrlEncodedContent(body);
             var response = await _client.PostAsync(link, content);
@@ -145,6 +145,15 @@ public class HttpController
             _logger.Error(ex, $"[POST] Request failed: {link}");
             Console.WriteLine("Timed out");
             TripCircuit(reason: "Timed out");
+            return new HttpDTO
+            {
+                content = UNAVAILABLE,
+                Response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "[POST] Request failed: {Link}", link);
             return new HttpDTO
             {
                 content = UNAVAILABLE,
