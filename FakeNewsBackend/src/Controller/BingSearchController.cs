@@ -14,7 +14,7 @@ public class BingSearchController : ISearchController
     private static readonly string API_KEY = Config.GetConnectionString("BingSearchApi");
     private static readonly string BASE_URL = "https://api.bing.microsoft.com/v7.0/search";
     private static readonly int NUMBER_RESULTS = 10;
-    private static readonly int BING_SEARCH_LIMIT = 1000;
+    private static readonly int BING_SEARCH_LIMIT = 35000;
     private int totalSearches = 0;
     public BingSearchController(HttpController httpController)
     {
@@ -23,7 +23,7 @@ public class BingSearchController : ISearchController
     public async Task<IEnumerable<UrlItemDTO>> SearchTitle(string title, string originalSite)
     {
         if(totalSearches >= BING_SEARCH_LIMIT)
-            System.Environment.Exit(0); 
+            System.Environment.Exit(500); 
 
         var uriBuilder = new UriBuilder(BASE_URL);
         uriBuilder.Query = new StringBuilder()

@@ -91,6 +91,10 @@ public class SimilarityService : ISimilarityService
 
     public bool Exists(WebPage originalPage, WebPage foundPage)
     {
+        if (originalPage == null || foundPage == null)
+        {
+            return false;
+        }
         using (var context = new SimilarityContext())
         {
             var result = context.Similarities.FirstOrDefault(sim =>

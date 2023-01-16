@@ -1,4 +1,5 @@
-﻿using FakeNewsBackend.Builder;
+﻿using System.Security.Policy;
+using FakeNewsBackend.Builder;
 using FakeNewsBackend.Common;
 using FakeNewsBackend.Domain;
 using FakeNewsBackend.Domain.DTO;
@@ -29,9 +30,11 @@ namespace FakeNewsBackend.Controller
         /// <param name="link">Url of webpage.</param>
         /// <param name="possibleDate">Date to fall back on if no date was found on the page. (can be null)</param>
         /// <returns>A <see cref="Task"/> containing the <see cref="WebPage"/>.</returns>
-        public async Task<WebPage> RequestWebPage(string link, DateTime possibleDate = default)
+        public async Task<WebPage?> RequestWebPage(string link, DateTime possibleDate = default)
         {
             var requestResult = await _httpController.MakeGetRequest(link.Replace("\"",""));
+            if (!requestResult.Response.IsSuccessStatusCode || requestResult.content == "Unavailable")
+                return null;
             var webPage = GetWebPage(requestResult.content, requestResult.Response.RequestMessage?.RequestUri, link);
             
             if(possibleDate != default && webPage.DatePosted == null)
@@ -49,7 +52,8 @@ namespace FakeNewsBackend.Controller
         /// with all the articles as <see cref="WebPage"/>.</returns>
         public async Task<List<WebPage>> RequestMultipleArticles(List<UrlItemDTO> items, bool isFromSameHost)
         {
-            List<Task<WebPage>> webPages = new();
+            List<Task<WebPage?>> webPages = new();
+            
             for (var i = 0; i < items.Count; i++)
             {
                 if(BlackList.LinkIsInBlackList(items[i].url))
@@ -58,7 +62,7 @@ namespace FakeNewsBackend.Controller
                     Thread.Sleep(_random.Next(1000,3000));
                 Console.WriteLine("Making article Request: " + items[i].url);
                 try
-                {
+                { 
                     webPages.Add(RequestWebPage(items[i].url, items[i].lastmod));
                 }
                 catch (Exception e)
@@ -68,7 +72,8 @@ namespace FakeNewsBackend.Controller
                 }
             }
             var pages = await Task.WhenAll(webPages);
-            return pages.ToList() ;
+            Console.WriteLine($"Difference in lists: {items.Count - webPages.Count}") ;
+            return pages.ToList();
         }
 
         /// <summary>
@@ -78,11 +83,12 @@ namespace FakeNewsBackend.Controller
         /// <returns>A <see cref="Task"/> containing a <see cref="Website"/>.</returns>
         public async Task<Website> GetWebSite(string link)
         {
+            link = link.Replace("\"", "");
             if (WebsiteExistsWithUrl(link))
                 return _siteService.GetWebSiteByUrl(link);
             
             var result = await _httpController.MakeGetRequest(link);
-            if (!((int)result.Response.StatusCode >= 200 && (int)result.Response.StatusCode < 300))
+            if (!result.Response.IsSuccessStatusCode || result.content == "Unavailable")
                 return null;
             var parser = new WebParser(result.content);
             
@@ -121,13 +127,20 @@ namespace FakeNewsBackend.Controller
 
         public async Task<Website> GetWhitelistedWebsite(string url)
         {
+            url = url.Replace("\"", "");
             if(_siteService.WebsiteExistsWithUrl(url))
                 return _siteService.GetWebSiteByUrl(url);
             
-            var website = await GetWebSite(url);
-            website.IsWhitelisted = true;
-            _siteService.Update(website);
-            return website;
+            var website = GetWebSite(url);
+            while(!website.IsCompleted) 
+            {
+                await Task.Delay(25);
+            }
+            if (website.Result == null)
+                return null;
+            website.Result.IsWhitelisted = true;
+            _siteService.Update(website.Result);
+            return website.Result;
         }
 
         /// <summary>
@@ -228,14 +241,16 @@ namespace FakeNewsBackend.Controller
         {
             var parser = new WebParser(content);
             WebPageBuilder builder = new();
-            return builder.AddLanguage(parser.GetLanguage())
-                        .AddPublishingDate(parser.GetDate())
-                        .AddTitle(parser.GetTitle())
-                        .AddWebsiteName(parser.GetWebsiteName(backupUri))
-                        .AddHostName(backupUri?.Host ?? "Not Found")
-                        .AddUrl(link)
-                        .AddMainContent(parser.GetMainArticle())
-                        .GetWebPage();
+            return new WebPage
+            {
+                Url = link,
+                Title = parser.GetTitle(),
+                WebsiteName = parser.GetWebsiteName(backupUri),
+                HostName = backupUri?.Host ?? "Not Found",
+                DatePosted = parser.GetDate(),
+                Language = parser.GetLanguage(),
+                MainContent = parser.GetMainArticle(),
+            };
         }
     }
 }

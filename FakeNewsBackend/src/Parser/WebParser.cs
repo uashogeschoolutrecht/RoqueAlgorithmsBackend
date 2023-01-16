@@ -70,37 +70,44 @@ namespace FakeNewsBackend.Parser
         /// <returns>The date if found, if not it returns: the minimal value.</returns>
         public DateTime GetDate()
         {
-            var published =_htmlPage.DocumentNode
-                .SelectSingleNode("//meta[@property=\"article:published_time\"]")?
-                .GetAttributeValue("content","");
-            if (published != null)
-            {
-                var date = DateTime.MinValue;
-                if (DateTime.TryParse(published,out date))
-                    return date.ToUniversalTime();
+            try{
+                var published =_htmlPage.DocumentNode
+                    .SelectSingleNode("//meta[@property=\"article:published_time\"]")?
+                    .GetAttributeValue("content","");
+                if (published != null)
+                {
+                    var date = DateTime.MinValue;
+                    if (DateTime.TryParse(published,out date))
+                        return date.ToUniversalTime();
+                }
+                var foundDate = FindDate();
+                if(foundDate?.GetAttributeValue("datetime",null) != null){
+                    return DateTime.Parse(foundDate?.GetAttributeValue("datetime",null)!)
+                        .ToUniversalTime();
+                }
+                var dt = DateTime.MinValue;
+                if (foundDate != null && foundDate.InnerText.Length <= 17)
+                {
+                    DateUtils.ParseDates(foundDate.InnerText, out dt);
+                    return dt.ToUniversalTime();
+                }
+                var page = _htmlPage.DocumentNode.SelectSingleNode("//body")?.InnerText;
+                if (page == null)
+                    return dt.ToUniversalTime();
+                var matches = Regex.Matches(page, "[0-9]{1,2}[-/,.][0-9]{1,2}[-/,.][0-9]{4}");
+                if (matches.Count <= 0)
+                    return dt.ToUniversalTime();
+                var mostRecentDate = matches.Select(match =>
+                {
+                    DateUtils.ParseDates(match.Value, out DateTime loopdt);
+                    return loopdt.ToUniversalTime();
+                }).Max();
+                return mostRecentDate.ToUniversalTime();
             }
-            var foundDate = FindDate();
-            if(foundDate?.GetAttributeValue("datetime",null) != null)
-                return DateTime.Parse(foundDate?.GetAttributeValue("datetime",null)!)
-                    .ToUniversalTime();
-            var dt = DateTime.MinValue;
-            if (foundDate != null && foundDate.InnerText.Length <= 17)
+            catch (Exception e) 
             {
-                DateUtils.ParseDates(foundDate.InnerText, out dt);
-                return dt.ToUniversalTime();
+                return DateTime.MinValue.ToUniversalTime();
             }
-            var page = _htmlPage.DocumentNode.SelectSingleNode("//body")?.InnerText;
-            if (page == null)
-                return dt.ToUniversalTime();
-            var matches = Regex.Matches(page, "[0-9]{1,2}[-/,.][0-9]{1,2}[-/,.][0-9]{4}");
-            if (matches.Count <= 0)
-                return dt.ToUniversalTime();
-            var mostRecentDate = matches.Select(match =>
-            {
-                DateUtils.ParseDates(match.Value, out DateTime loopdt);
-                return loopdt.ToUniversalTime();
-            }).Max();
-            return mostRecentDate.ToUniversalTime();
         }
 
         /// <summary>
@@ -151,7 +158,7 @@ namespace FakeNewsBackend.Parser
         {
             var tagList = new List<string>
             {
-                "//time",
+               "//time",
                 "//*[@datetime]",
                 "//*[contains(@class,'date')]",
                 "//*[contains(@class,'publish')]"
@@ -278,7 +285,6 @@ namespace FakeNewsBackend.Parser
                 "//nav",
                 "//time",
                 "//div[contains(@class,'code-block')]",
-                // "//*[contains(@class,'date')]",
                 "//div[contains(@class,'caption')]",
                 "//div[contains(@class,'agreement')]",
                 "//div[contains(@class,'info')]",

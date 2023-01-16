@@ -24,8 +24,10 @@ namespace FakeNewsBackend.Common
 
         public static IEnumerable<string> GetDataBaseSeed(string attributeName)
         {
-            var filepath = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName +
-                           "/Resources/seeddatabase.json";
+            var filepath = Directory.GetParent(Environment.CurrentDirectory).FullName +
+                           "/FakeNewsBackend/Resources/seeddatabase.json";
+
+
 
             var data = File.ReadAllText(filepath);
             if (!JsonDocumentExtension.TryParse(data, out var document))

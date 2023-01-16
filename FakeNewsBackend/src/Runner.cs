@@ -56,11 +56,11 @@ namespace FakeNewsBackend
             _sitemapService = new ();
             _robotRulesService = new();
             
-            Console.Write("please enter the url of the similarity model: ");
-            similarityUrl = Console.ReadLine();
+            
+            similarityUrl = "http://145.38.188.62:5000";
             
             
-            _httpController = new(new HttpClient(), 25);
+            _httpController = new(new HttpClient(), 75);
             _searchController = new BingSearchController(_httpController);
             _webController = new (_httpController, random, _webSiteService);
             _siteMapController = new (_httpController, random, _sitemapService);
@@ -76,18 +76,19 @@ namespace FakeNewsBackend
                 _logger.Info("Seeding the database.");
                 await SeedDatabase();
             }
-            var t1 = Task.Run(async () => await SetUpWebsites());
+            //var t1 = Task.Run(async () => await SetUpWebsites());
             var t2 = Task.Run(async () => await ThroughWebsites());
 
-            await Task.WhenAll(t1, t2);
+            await Task.WhenAll( t2);
             Console.WriteLine("Done");
         }
 
         public async Task<int> SetUpWebsites()
         {
-            ThreadPool.SetMaxThreads(10,10);
+            ThreadPool.SetMaxThreads(5,5);
             var runningWebsites = new ConcurrentDictionary<Website, bool>();
-            while (true)
+            var i = 0;
+            while (i < 5)
             {
                 if (!_webController.HasWebsiteToSetup())
                 {
@@ -105,12 +106,14 @@ namespace FakeNewsBackend
                     runningWebsites.TryRemove(
                         new KeyValuePair<Website, bool>(website, true));
                 });
+                i++;
             }
             return 0;
         }
 
         public async Task<int> ThroughWebsites()
         {
+            loop:
             while (_webController.HasNextWebsite())
             {
                 Console.WriteLine("Walking thread working");
@@ -119,6 +122,8 @@ namespace FakeNewsBackend
 
                 await GoThroughWebSite(completeWebsite);
             }
+            await SetUpWebsites();
+            goto loop;
             return 0;
         }
 
@@ -128,17 +133,19 @@ namespace FakeNewsBackend
             var result =
                 website.Sitemap.links.Where(i => !i.scraped && website.IsLinkAllowed(i.url))
                     .ToList();
-            var lengthToloop = result.Count > 50 ? 50 : result.Count;
+            var lengthToloop = result.Count > 25 ? 25 : result.Count;
+            var handling = new List<Task<bool>>();
             for (var i = 0; i < lengthToloop; i++)
             {
-                var succeeded = HandleArticle(result[i]);
-                while (!succeeded.IsCompleted)
-                {
-                    await Task.Delay(25);
-                }
-                if (!succeeded.Result)
+                handling.Add(HandleArticle(result[i]));
+                await Task.Delay(250);
+            }
+            Console.WriteLine("Waiting for all articles to be handled");
+            var doneHandling = await Task.WhenAll(handling);
+            for(var i = 0; i < doneHandling.Count(); i++)
+            {
+                if (!doneHandling[i])
                     continue;
-                
                 website.NumberOfArticlesScraped++;
                 website.Progress.NumberOfLinkInSiteMap++;
                 website.Progress.CurrentlyWorkingOn = result[i].url;
@@ -146,13 +153,15 @@ namespace FakeNewsBackend
                 _webController.UpdateWebsite(website);
                 _siteMapController.UpdateSitemapItem(result[i]);
             }
+
             if (website.NumberOfArticles == website.NumberOfArticlesScraped)
             {
                 _logger.Trace("{Website} is now done", website.Name);
                 website.Progress.IsDone = true;
             }
-                
+            Console.WriteLine("Done waiting");    
             _webController.UpdateWebsite(website);
+            await Task.Delay(500);
         }
 
         public async Task SetupWebsite(string link)
@@ -193,8 +202,7 @@ namespace FakeNewsBackend
                 Console.WriteLine($"Working with: {item.url}");
 
                 var originalPage = await _webController.RequestWebPage(item.url, item.date);
-
-                if (originalPage.MainContent == "Not Found" ||
+                if (originalPage == null || originalPage.MainContent == "Not Found" ||
                     originalPage.MainContent.Length < minimumArticlelength ||
                     originalPage.MainContent.Length > maximumArticlelength)
                 {
@@ -219,15 +227,18 @@ namespace FakeNewsBackend
                 Console.WriteLine($"Getting similarity scores for article {item.url},\n{foundLinks.Count} times");
                 Console.WriteLine($"Article length: {originalPage.MainContent.Length}");
                 
-                var filtered = foundLinks.Where(page =>
+                var filtered = new List<WebPage>();
+                foreach (var page in foundLinks)
                 {
+                    if (page == null)
+                        continue;
                     if (_similarityController.Exists(originalPage, page))
-                        return false;
+                        continue;
                     if (page.MainContent.Length < minimumArticlelength ||
                         page.MainContent.Length > maximumArticlelength)
-                        return false;
-                    return true;
-                });
+                        continue;
+                    filtered.Add(page);
+                }
                 var sims = _similarityController.GetSimilarityScores(originalPage, filtered);
                 while (!sims.IsCompleted)
                 {
@@ -275,7 +286,11 @@ namespace FakeNewsBackend
         public async Task<int> HandleSimilarity(Similarity sim, SitemapItem origItem)
         {
             if (!_similarityController.ShouldSave(sim))
+            {
+                Console.WriteLine("Should not save");
                 return 0;
+            }
+                
             
             var foundurl = (sim.UrlToOriginalArticle == origItem.url)
                 ? sim.UrlToFoundArticle
@@ -293,13 +308,14 @@ namespace FakeNewsBackend
             
             if(areSimilar)
                 _logger.Info("New website found: {Website}", url);
-
+            Console.WriteLine($"Sim handeling : {sim.SimilarityScore}");
             while (!newWebsite.IsCompleted)
             {
                 await Task.Delay(25);
             }
-
             var website = newWebsite.Result;
+            if(website == null)
+                return 0;
             if (areSimilar && website.IsWhitelisted && !website.ShouldNotBeScraped)
             {
                 website.IsWhitelisted = false;

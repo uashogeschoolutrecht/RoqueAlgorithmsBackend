@@ -183,6 +183,9 @@ public class SiteMapController
                 LinksWithArticles = new List<UrlItemDTO>()
             };
             var requestResult = await _httpController.MakeGetRequest(website.Url);
+            if (!requestResult.Response.IsSuccessStatusCode || requestResult.content == "Unavailable")
+                return new List<UrlItemDTO>();
+            
             var parser = new WebParser(requestResult.content);
             prog.LinksOnWebsite = parser.GetAllLinksOnPage()
                 .Where(linkOnPage => 
@@ -218,9 +221,10 @@ public class SiteMapController
                 Thread.Sleep(_random.Next(30000));
             if (!requestResultLoop.Response.IsSuccessStatusCode || requestResultLoop.content == "Unavailable")
                 continue;
-            
-            using (var tempParser = new WebParser(requestResultLoop.content))
+            try
             {
+                using var tempParser = new WebParser(requestResultLoop.content);
+                
                 prog.LinksOnWebsite = prog.LinksOnWebsite.Union(tempParser.GetAllLinksOnPage())
                     .Where(linkOnPage => 
                         IsLinkInSameHost(website.Url, linkOnPage.url) && 
@@ -237,6 +241,10 @@ public class SiteMapController
                     continue;
                 prog.LinksOnWebsite[i].lastmod = tempParser.GetDate(); 
                 prog.LinksWithArticles.Add(prog.LinksOnWebsite[i]);
+            }
+            catch (Exception e) 
+            {
+                _logger.Error(e, "Invalid html");
             }
         }
         _sitemapService.DeleteGenerateProgress(prog);

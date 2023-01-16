@@ -31,17 +31,18 @@ namespace FakeNewsBackend.Parser
             {
                 if (node["loc"] == null)
                     continue;
-                if (node["lastmod"] != null)
+                var date = DateTime.MinValue;
+                if (DateTime.TryParse(node["lastmod"]?.InnerText ,out date))
                     yield return new UrlItemDTO
                     {
                         url = node["loc"]?.InnerText,
-                        lastmod = DateTime.Parse(node["lastmod"]?.InnerText).ToUniversalTime()
-                    };
+                        lastmod = date.ToUniversalTime()
+                    };                    
                 else
                     yield return new UrlItemDTO
                     {
                         url = node["loc"]?.InnerText,
-                        lastmod = DateTime.MinValue.ToUniversalTime()
+                        lastmod = date.ToUniversalTime()
                     };
             }
         }

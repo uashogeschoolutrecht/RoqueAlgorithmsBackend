@@ -44,13 +44,14 @@ public class HttpController
     {
         try
         {
+            using var tokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             await semaphore.WaitAsync();
             using var request = new HttpRequestMessage(HttpMethod.Get, link);
             
             if (headers != default)
                 foreach (var headersKey in headers.Keys)
                     request.Headers.Add(headersKey, headers[headersKey]);
-            var response = await _client.SendAsync(request);
+            var response = await _client.SendAsync(request, tokenSource.Token);
 
             if (response.StatusCode == HttpStatusCode.OK)
                 return new HttpDTO
@@ -67,7 +68,7 @@ public class HttpController
         }
         catch (HttpRequestException ex)
         {
-            _logger.Error(ex, $"[GET] Request failed: {link}");
+            _logger.Error(ex.Message, $"[GET] Request failed: {link}");
             return new HttpDTO
             {
                 content = UNAVAILABLE,
@@ -77,7 +78,7 @@ public class HttpController
         catch (Exception ex) when (ex is OperationCanceledException || 
                                    ex is TaskCanceledException)
         {
-            _logger.Error(ex, "[GET] Request failed: {Link}", link);
+            _logger.Error(ex.Message, "[GET] Request failed: {Link}", link);
             TripCircuit(reason: "Timed out");
             return new HttpDTO
             {
@@ -87,7 +88,7 @@ public class HttpController
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "[GET] Request failed: {Link}", link);
+            _logger.Error(ex.Message, "[GET] Request failed: {Link}", link);
             return new HttpDTO
             {
                 content = UNAVAILABLE,
@@ -110,6 +111,7 @@ public class HttpController
     {
         try
         {
+            
             await semaphore.WaitAsync();
 
             HttpContent content = new FormUrlEncodedContent(body);

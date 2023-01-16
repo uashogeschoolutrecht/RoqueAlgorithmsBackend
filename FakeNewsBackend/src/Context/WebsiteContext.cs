@@ -13,6 +13,7 @@ public class WebsiteContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseNpgsql(Config.GetConnectionString("DatabaseConnectionString"));
+        optionsBuilder.EnableSensitiveDataLogging();
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

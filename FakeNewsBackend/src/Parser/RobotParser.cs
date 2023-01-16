@@ -40,6 +40,7 @@ public class RobotParser
             switch (key)
             {
                 case "User-agent":
+                case "User-Agent":
                     strct = new RobotFields.FieldsForUserAgents();
                     strct.AllowedRules = new List<string>();
                     strct.DisAllowedRules = new List<string>();

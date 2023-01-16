@@ -111,12 +111,13 @@ public class WebsiteService : IWebsiteService
     {
         using (var context = new WebsiteContext())
         {
-            return context.Websites
-                .Any(website => website.HasRules &&
-                                website.HasSitemap &&
-                                !website.IsWhitelisted &&
-                                !website.ShouldNotBeScraped &&
-                                website.NumberOfArticles != website.NumberOfArticlesScraped);
+            return context.Websites.Any(website =>
+                website.HasRules &&
+                    website.HasSitemap &&
+                    !website.IsWhitelisted &&
+                    !website.ShouldNotBeScraped &&
+                    website.NumberOfArticles != website.NumberOfArticlesScraped
+            );
         }
     }
 
@@ -139,7 +140,8 @@ public class WebsiteService : IWebsiteService
                 .Select(website => website.Id);
             
             var prog = context.Progress.ToList()
-                .FirstOrDefault(prog => !prog.IsDone && setupwebsites.Contains(prog.WebsiteId), null);
+                .Where(prog => !prog.IsDone && setupwebsites.Contains(prog.WebsiteId))
+                .Sample();
             
             if (prog == null) return null;
             return context.Websites.ToList()
