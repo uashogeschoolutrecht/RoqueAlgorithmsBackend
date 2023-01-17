@@ -121,6 +121,11 @@ public class SimilarityController
         return _similarityService.GetSimilaritiesByWebsitesIdInOrder(website1.Id, website2.Id);
     }
 
+    public IEnumerable<Similarity> GetSimilaritiesWithUncertainUrls()
+    {
+        return _similarityService.GetSimilaritiesWithUncertainUrls();
+    }
+
     /// <summary>
     /// Save a <see cref="Similarity"/> object in the database.
     /// </summary>
@@ -178,5 +183,21 @@ public class SimilarityController
             OriginalPostDate = order.Item1.DatePosted,
             FoundPostDate = order.Item2.DatePosted,
         };
+    }
+
+    public void UpdateSimilarityAfterSwap(Similarity oldSim, Similarity newSim)
+    {
+        _similarityService.UpdateSimilarityAfterSwap(oldSim, newSim);
+    }
+    public void UpdateSimilarity(Similarity sim)
+    {
+        _similarityService.Update(sim);
+    }
+
+    public bool ShouldSwap(Similarity sim, bool onlyUpdatedWithMonth)
+    {
+        if(onlyUpdatedWithMonth)
+            return sim.OriginalPostDate.Month > sim.FoundPostDate.Month;
+        return sim.OriginalPostDate.CompareTo(sim.FoundPostDate) > 0;
     }
 }

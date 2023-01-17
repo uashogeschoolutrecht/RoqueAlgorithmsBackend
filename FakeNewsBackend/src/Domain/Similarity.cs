@@ -14,6 +14,15 @@ public class Similarity
     public DateTime OriginalPostDate { get; set; }
     public DateTime FoundPostDate { get; set; }
 
+
+    public void swap()
+    {
+        (OriginalWebsiteId, FoundWebsiteId) = (FoundWebsiteId, OriginalWebsiteId);
+        (UrlToOriginalArticle, UrlToFoundArticle) = (UrlToFoundArticle, UrlToOriginalArticle);
+        (OriginalLanguage, FoundLanguage) = (FoundLanguage, OriginalLanguage);
+        (OriginalPostDate, FoundPostDate)= (FoundPostDate, OriginalPostDate);
+    }
+
     public string ToString()
     {
         return $"OriginalWebsite: {OriginalWebsiteId} \n" +

@@ -49,6 +49,16 @@ public class SimilarityService : ISimilarityService
             return foundSimilarity;
         }
     }
+    public IEnumerable<Similarity> GetSimilaritiesWithUncertainUrls() 
+    { 
+        using(var context = new SimilarityContext())
+        {
+            return context.Similarities.ToArray().Where(sim => 
+                sim.FoundPostDate == DateTime.MinValue ||
+                sim.OriginalPostDate == DateTime.MinValue);
+        }
+    }
+
     public IEnumerable<Similarity> GetSimilaritiesByWebsitesId(int webSite1Id, int webSite2Id)
     {
         using (var context = new SimilarityContext())
@@ -104,6 +114,18 @@ public class SimilarityService : ISimilarityService
                      sim.UrlToFoundArticle == originalPage.Url && sim.UrlToOriginalArticle == foundPage.Url)
             );
             return result != null;
+        }
+    }
+
+    public void UpdateSimilarityAfterSwap(Similarity oldSim, Similarity newSim)
+    {
+        using(var context = new SimilarityContext())
+        {
+            context.Similarities.Attach(oldSim);
+            context.Similarities.Remove(oldSim);
+            context.SaveChanges();
+            context.Similarities.Add(newSim);
+            context.SaveChanges();
         }
     }
 }
