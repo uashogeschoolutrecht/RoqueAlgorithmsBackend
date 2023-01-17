@@ -58,7 +58,7 @@ public interface ISimilarityService : IService<Similarity>
     /// <summary>
     /// Updates <see cref="Similarity"/> after the combined keys have been switched.
     /// </summary>
-    /// <param name="oldSim">the <see cref="Similarity"/> that is in the database</param>
-    /// <param name="newSim">the <see cref="Similarity"/> that has been swapped</param>
-    public void UpdateSimilarityAfterSwap(Similarity oldSim, Similarity newSim);
+    /// <param name="similarities">A <see cref="IEnumerable{T}"/> containing a tuple with the original and updated
+    /// <see cref="Similarity"/></param>
+    public void UpdateSimilarityAfterSwap(IEnumerable<((string, string), Similarity updated)> similarities);
 }

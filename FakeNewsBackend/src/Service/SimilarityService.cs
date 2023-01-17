@@ -53,9 +53,9 @@ public class SimilarityService : ISimilarityService
     { 
         using(var context = new SimilarityContext())
         {
-            return context.Similarities.ToArray().Where(sim => 
+            return context.Similarities.Where(sim => 
                 sim.FoundPostDate == DateTime.MinValue ||
-                sim.OriginalPostDate == DateTime.MinValue);
+                sim.OriginalPostDate == DateTime.MinValue).ToList();
         }
     }
 
@@ -117,15 +117,42 @@ public class SimilarityService : ISimilarityService
         }
     }
 
-    public void UpdateSimilarityAfterSwap(Similarity oldSim, Similarity newSim)
+    public void UpdateSimilarityAfterSwap(IEnumerable<((string, string), Similarity updated)> similarities)
     {
         using(var context = new SimilarityContext())
         {
-            context.Similarities.Attach(oldSim);
-            context.Similarities.Remove(oldSim);
-            context.SaveChanges();
-            context.Similarities.Add(newSim);
-            context.SaveChanges();
+            using (var transaction = context.Database.BeginTransaction())
+            {
+                try
+                {
+                    foreach(var (original, updated) in similarities)
+                    {
+                        if (original.Item1 == updated.UrlToOriginalArticle)
+                        {
+                            context.Similarities.Update(updated);
+                            continue;
+                        }
+
+                        var dbsim = GetSimilarityByLinks(original.Item1, original.Item2);
+                        context.Similarities.Remove(dbsim);
+                        context.Similarities.Add(updated);
+                    }
+                    context.SaveChanges();
+                    transaction.Commit();
+                }
+                catch (DbUpdateConcurrencyException e)
+                {
+                    Console.WriteLine(e);
+                    transaction.Rollback();
+                    var entry = e.Entries.Single();
+                    var clientValues = (Similarity)entry.Entity;
+                    var databaseEntry = entry.GetDatabaseValues();
+                    if (databaseEntry == null)
+                    {
+                        Console.WriteLine("Unable to save changes. The similarity was deleted by another user.");
+                    }
+                }
+            }
         }
     }
 }

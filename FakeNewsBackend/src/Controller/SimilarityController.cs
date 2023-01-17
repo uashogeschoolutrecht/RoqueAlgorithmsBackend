@@ -184,11 +184,6 @@ public class SimilarityController
             FoundPostDate = order.Item2.DatePosted,
         };
     }
-
-    public void UpdateSimilarityAfterSwap(Similarity oldSim, Similarity newSim)
-    {
-        _similarityService.UpdateSimilarityAfterSwap(oldSim, newSim);
-    }
     public void UpdateSimilarity(Similarity sim)
     {
         _similarityService.Update(sim);
@@ -199,5 +194,52 @@ public class SimilarityController
         if(onlyUpdatedWithMonth)
             return sim.OriginalPostDate.Month > sim.FoundPostDate.Month;
         return sim.OriginalPostDate.CompareTo(sim.FoundPostDate) > 0;
+    }
+    
+    public void CheckSimilarities()
+    {
+        var similaritiesToCheck = GetSimilaritiesWithUncertainUrls();
+        var updatedSimilarities = new List<((string,string), Similarity)>();
+        foreach( var sim in similaritiesToCheck)
+        {
+            Console.WriteLine(sim.ToString());
+            var originalSim = (sim.UrlToOriginalArticle, sim.UrlToFoundArticle);
+            var hasUpdatedDate = false;
+            var onlyFoundMonth = false;
+            
+            if (sim.FoundPostDate == DateTime.MinValue && UrlUtils.UrlHasTotalDate(sim.UrlToFoundArticle))
+            {
+                sim.FoundPostDate = UrlUtils.GetDateOutOfUrl(sim.UrlToFoundArticle);
+                hasUpdatedDate = true;
+            }
+            else if (sim.FoundPostDate == DateTime.MinValue && UrlUtils.UrlHasMonth(sim.UrlToFoundArticle))
+            {
+                sim.FoundPostDate = UrlUtils.GetMonthOutOfUrl(sim.UrlToFoundArticle);
+                hasUpdatedDate = true;
+                onlyFoundMonth = true;
+            }
+            if (sim.OriginalPostDate == DateTime.MinValue && UrlUtils.UrlHasTotalDate(sim.UrlToOriginalArticle))
+            {
+                sim.OriginalPostDate = UrlUtils.GetDateOutOfUrl(sim.UrlToOriginalArticle);
+                hasUpdatedDate = true;
+            }
+            else if (sim.OriginalPostDate == DateTime.MinValue && UrlUtils.UrlHasMonth(sim.UrlToOriginalArticle))
+            {
+                sim.OriginalPostDate = UrlUtils.GetMonthOutOfUrl(sim.UrlToOriginalArticle);
+                hasUpdatedDate = true;
+                onlyFoundMonth = true;
+            }
+            Console.WriteLine(sim.ToString());
+            if (hasUpdatedDate && ShouldSwap(sim, onlyFoundMonth ) ) 
+            {
+                sim.swap();
+                updatedSimilarities.Add((originalSim,sim));
+            }else if (hasUpdatedDate)
+            {
+                updatedSimilarities.Add((originalSim,sim));
+            }
+            Console.WriteLine("------");
+        }
+        _similarityService.UpdateSimilarityAfterSwap(updatedSimilarities);
     }
 }
