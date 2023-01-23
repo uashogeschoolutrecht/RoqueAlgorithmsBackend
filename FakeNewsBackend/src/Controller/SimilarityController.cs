@@ -200,7 +200,7 @@ public class SimilarityController
     
     public void CheckSimilarities()
     {
-        var similaritiesToCheck = GetSimilaritiesWithUncertainUrls();
+        var similaritiesToCheck = GetSimilaritiesWithUncertainUrls().Distinct();
         Console.WriteLine(similaritiesToCheck.Count());
         var updatedSimilarities = new List<(SimilarityIds, Similarity, bool)>();
         foreach( var sim in similaritiesToCheck)

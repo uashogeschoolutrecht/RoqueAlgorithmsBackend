@@ -16,9 +16,6 @@
     <Content Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="..\solutionsettings.json">
-      <Link>solutionsettings.json</Link>
-    </None>
     <None Remove="src\Resources\GeneratingBlackList.txt" />
     <None Remove="src\Resources\StandardBlackList.txt" />
     <None Remove="Resources\appsettings.json" />

@@ -18,6 +18,7 @@ public class Similarity
     public byte[] Timestamp { get; set; }
 
 
+
     public void swap()
     {
         (OriginalWebsiteId, FoundWebsiteId) = (FoundWebsiteId, OriginalWebsiteId);

@@ -22,4 +22,8 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Rust\Data-Collector\target\.rustc_info.json" />
+    </ItemGroup>
+
 </Project>
