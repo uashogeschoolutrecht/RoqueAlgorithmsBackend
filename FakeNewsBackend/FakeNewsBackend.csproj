@@ -10,7 +10,7 @@
   <ItemGroup>
     <None Remove="NLog.config" />
   </ItemGroup>
-
+	
   <ItemGroup>
     <None Include="appsettings.json" />
     <Content Include="NLog.config">

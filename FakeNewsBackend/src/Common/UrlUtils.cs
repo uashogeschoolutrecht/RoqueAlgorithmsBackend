@@ -4,38 +4,110 @@ namespace FakeNewsBackend.Common;
 
 public class UrlUtils
 {
-    private static Regex dateWithOnlyYear = new ("/[0-9]{4}/");
-    private static Regex dateWithOnlyMonth = new("/[0-9]{4}/[0-9]{2}/");
-    private static Regex date = new("/[0-9]{4}/[0-9]{2}/[0-9]{2}/");
+    private static List<Regex> dateWithOnlyYearList = new List<Regex>() {
+        new (@"\/(20([0-1][0-9]|2[0-3]))\/")};
+    private static List<Regex> dateWithOnlyMonthList = new List<Regex>() {
+        new(@"\/(20([0-1][0-9]|2[0-3])\/(0[0-9]|1[0-2]))\/")};
+    private static List<Regex> dateList = new List<Regex>(){
+        new(@"\/(20([0-1][0-9]|2[0-3])\/(0[0-9]|1[0-2])\/([0-2][0-9]|3[0-1]))\/"),
+        new(@"\/([0-9]{4}\/[0-9]{2}\/[0-9]{2})\/") ,
+        new(@"\/(\d{4}\/\d{1,2}\/\d{1,2})\/"),
+        new(@"\/(\d{4}\/\d{2}\/\d{2})\/") ,
+        new(@"/(\d{4})/(\d{2})/(\d{2})/"),
+        new("/[0-9]{4}/[0-9]{2}/[0-9]{2}/"),
+        new(@"/[0-9]{4}\/[0-9]{2}\/[0-9]{2}/"),
+        new(@"\/\d{4}\/\d{2}\/\d{2}\/"),
+    };
 
     public static bool UrlHasDate(string url)
     {
-        return dateWithOnlyYear.IsMatch(url);
+        foreach (Regex regex in dateWithOnlyYearList)
+        {
+            if (regex.IsMatch(url)) return true;
+        }
+        return false;
     }
     public static bool UrlHasTotalDate(string url)
     {
-        return date.IsMatch(url);
+        foreach (Regex regex in dateList)
+        {
+            if(regex.IsMatch(url))
+            {
+                Console.WriteLine($"url == {url}");
+                return true;
+            }
+                
+        }
+        return false;
     }
     public static bool UrlHasMonth(string url)
     {
-        return dateWithOnlyMonth.IsMatch(url);
+        foreach (Regex regex in dateWithOnlyMonthList)
+        {
+            if (regex.IsMatch(url)) return true;
+        }
+        return false;
     }
     public static int GetYearOutOfUrl(string url)
     {
-        var str = dateWithOnlyYear.Match(url);
-        return Int32.Parse(str.Value.Replace("/", ""));
+        string result = "";
+        foreach(Regex regex in dateWithOnlyYearList)
+        {
+            if (regex.IsMatch(url))
+            {
+                result = regex.Match(url).ToString();
+                break;
+            }
+        }
+        return Int32.Parse(result.Replace("/", ""));
+    }
+    public static DateTime GetYearOutOfUrlAsDate(string url)
+    {
+        Console.WriteLine(url);
+        string result = "";
+        foreach (Regex regex in dateWithOnlyYearList)
+        {
+            if (regex.IsMatch(url))
+            {
+                result = regex.Match(url).ToString();
+                break;
+            }
+        }
+        Console.WriteLine(result);
+
+        var stripped = result.Remove(0,1);
+        return DateTime.Parse(stripped + "01/02").ToUniversalTime();
     }
     public static DateTime GetDateOutOfUrl(string url)
     {
-        var str = date.Match(url);
-        var stripped = str.Value.Replace("/", "-").Substring(1, str.Length - 2);
+        Console.WriteLine(url);
+        string result = "";
+        foreach (Regex regex in dateList)
+        {
+            if (regex.IsMatch(url))
+            {
+                result = regex.Match(url).ToString();
+                break;
+            }
+        }
+        if (!result.StartsWith("/"))
+            return DateTime.Parse(result).ToUniversalTime();
+        var stripped = result.Substring(1, result.Length - 2);
         return DateTime.Parse(stripped).ToUniversalTime();
     }
     public static DateTime GetMonthOutOfUrl(string url)
     {
-        var str = dateWithOnlyMonth.Match(url);
-        var stripped = str.Value.Replace("/", "-").Substring(1, str.Length - 2);
-        return DateTime.Parse(stripped + "-01").ToUniversalTime();
+        string result = "";
+        foreach (Regex regex in dateWithOnlyMonthList)
+        {
+            if (regex.IsMatch(url))
+            {
+                result = regex.Match(url).ToString();
+                break;
+            }
+        }
+        var stripped = result.Substring(1, result.Length - 2);
+        return DateTime.Parse(stripped + "/02").ToUniversalTime();
     }
     
     public static string SanetizeUrl(string url)

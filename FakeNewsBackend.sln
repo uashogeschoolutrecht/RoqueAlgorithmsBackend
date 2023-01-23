@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FakeNewsBackend", "FakeNews
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{68B29CE0-1E54-4649-9DC7-9E954D60F81F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataVisalisationServer", "DataVisalisationServer\DataVisalisationServer.csproj", "{2D08AB14-9961-4BD9-9511-80059B29E6AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataVisualisationServer", "DataVisualisationServer\DataVisualisationServer.csproj", "{2D08AB14-9961-4BD9-9511-80059B29E6AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

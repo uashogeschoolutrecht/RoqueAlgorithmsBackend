@@ -1,4 +1,5 @@
 ﻿using FakeNewsBackend.Domain;
+using FakeNewsBackend.Domain.DTO;
 
 namespace FakeNewsBackend.Service.Interface;
 
@@ -60,5 +61,5 @@ public interface ISimilarityService : IService<Similarity>
     /// </summary>
     /// <param name="similarities">A <see cref="IEnumerable{T}"/> containing a tuple with the original and updated
     /// <see cref="Similarity"/></param>
-    public void UpdateSimilarityAfterSwap(IEnumerable<((string, string), Similarity updated)> similarities);
+    public void UpdateSimilarityAfterSwap(IEnumerable<(SimilarityIds similarityIds, Similarity updated, bool isUpdated)> similarities);
 }

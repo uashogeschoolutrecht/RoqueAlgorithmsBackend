@@ -69,8 +69,6 @@ namespace FakeNewsBackend
         }
         public async Task Run()
         {
-            // await SetSimilaritiesInJson();
-            // return;
             if (!_webController.HasWebsites())
             {
                 _logger.Info("Seeding the database.");
@@ -335,61 +333,6 @@ namespace FakeNewsBackend
             _similarityController.Save(sim);
             return 0;
         }
-
-        // public void CheckSimilarities()
-        // {
-        //     Console.WriteLine("checking sims");
-        //     var similaritiesToCheck = _similarityController.GetSimilaritiesWithUncertainUrls();
-        //     var i = 0;
-        //     foreach( var sim in similaritiesToCheck)
-        //     {
-        //         lock (sim)
-        //         {
-        //             i++;
-        //             if (i > 5)
-        //                 break;
-        //             Console.WriteLine(sim.ToString());
-        //             var originalSim = sim;
-        //             var hasUpdatedDate = false;
-        //             var onlyFoundMonth = false;
-        //             if (sim.FoundPostDate == DateTime.MinValue && UrlUtils.UrlHasTotalDate(sim.UrlToFoundArticle))
-        //             {
-        //                 sim.FoundPostDate = UrlUtils.GetDateOutOfUrl(sim.UrlToFoundArticle);
-        //                 hasUpdatedDate = true;
-        //             }
-        //             else if (sim.FoundPostDate == DateTime.MinValue && UrlUtils.UrlHasMonth(sim.UrlToFoundArticle))
-        //             {
-        //                 sim.FoundPostDate = UrlUtils.GetMonthOutOfUrl(sim.UrlToFoundArticle);
-        //                 hasUpdatedDate = true;
-        //                 onlyFoundMonth = true;
-        //             }
-        //             if (sim.OriginalPostDate == DateTime.MinValue && UrlUtils.UrlHasTotalDate(sim.UrlToOriginalArticle))
-        //             {
-        //                 sim.OriginalPostDate = UrlUtils.GetDateOutOfUrl(sim.UrlToOriginalArticle);
-        //                 hasUpdatedDate = true;
-        //             }
-        //             else if (sim.FoundPostDate == DateTime.MinValue && UrlUtils.UrlHasMonth(sim.UrlToFoundArticle))
-        //             {
-        //                 sim.FoundPostDate = UrlUtils.GetMonthOutOfUrl(sim.UrlToFoundArticle);
-        //                 hasUpdatedDate = true;
-        //                 onlyFoundMonth = true;
-        //             }
-        //             Console.WriteLine(sim.ToString());
-        //             if (hasUpdatedDate && _similarityController.ShouldSwap(sim, onlyFoundMonth ) ) 
-        //             {
-        //                 sim.swap();
-        //                 _similarityController.UpdateSimilarityAfterSwap(originalSim, sim);
-        //                 Console.WriteLine(sim.ToString());
-        //
-        //             }else if (hasUpdatedDate)
-        //             {
-        //                 _similarityController.UpdateSimilarity(sim);
-        //             }
-        //             Console.WriteLine("---");
-        //         }
-        //
-        //     }
-        // }
     }
         
 }

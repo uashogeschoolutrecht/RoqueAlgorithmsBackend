@@ -189,57 +189,88 @@ public class SimilarityController
         _similarityService.Update(sim);
     }
 
-    public bool ShouldSwap(Similarity sim, bool onlyUpdatedWithMonth)
+    public bool ShouldSwap(Similarity sim, bool onlyUpdatedWithMonth, bool onlyFoundYear)
     {
         if(onlyUpdatedWithMonth)
             return sim.OriginalPostDate.Month > sim.FoundPostDate.Month;
+        if(onlyFoundYear)
+            return sim.OriginalPostDate.Year > sim.FoundPostDate.Year;
         return sim.OriginalPostDate.CompareTo(sim.FoundPostDate) > 0;
     }
     
     public void CheckSimilarities()
     {
         var similaritiesToCheck = GetSimilaritiesWithUncertainUrls();
-        var updatedSimilarities = new List<((string,string), Similarity)>();
+        Console.WriteLine(similaritiesToCheck.Count());
+        var updatedSimilarities = new List<(SimilarityIds, Similarity, bool)>();
         foreach( var sim in similaritiesToCheck)
         {
-            Console.WriteLine(sim.ToString());
-            var originalSim = (sim.UrlToOriginalArticle, sim.UrlToFoundArticle);
+            var originalSim =  new SimilarityIds() 
+            {
+                originalId = sim.OriginalWebsiteId,
+                foundId = sim.FoundWebsiteId,
+                originalUrl = sim.UrlToOriginalArticle, 
+                foundUrl = sim.UrlToFoundArticle  ,
+                originalDate = sim.OriginalPostDate,
+                foundDate = sim.FoundPostDate,
+            };
             var hasUpdatedDate = false;
             var onlyFoundMonth = false;
+            var hasSwapped = false;
+            var onlyFoundYear = false;
+            if(sim.FoundPostDate == DateTime.MinValue)
+            {
+                var (date, updated, month, year) = GetDateFromUrl(sim.UrlToFoundArticle, sim.FoundPostDate, 
+                    hasUpdatedDate,onlyFoundMonth, onlyFoundYear);
+                sim.FoundPostDate = date;
+                hasUpdatedDate = updated;
+                onlyFoundMonth = month;
+                onlyFoundYear = year;
+            }
+            if (sim.OriginalPostDate == DateTime.MinValue)
+            {
+                var (date, updated, month, year) = GetDateFromUrl(sim.UrlToOriginalArticle, sim.OriginalPostDate,
+                    hasUpdatedDate, onlyFoundMonth, onlyFoundYear);
+                sim.OriginalPostDate = date;
+                hasUpdatedDate = updated;
+                onlyFoundMonth = month;
+                onlyFoundYear = year;
+            }
+            if (!hasUpdatedDate)
+                continue;
             
-            if (sim.FoundPostDate == DateTime.MinValue && UrlUtils.UrlHasTotalDate(sim.UrlToFoundArticle))
-            {
-                sim.FoundPostDate = UrlUtils.GetDateOutOfUrl(sim.UrlToFoundArticle);
-                hasUpdatedDate = true;
-            }
-            else if (sim.FoundPostDate == DateTime.MinValue && UrlUtils.UrlHasMonth(sim.UrlToFoundArticle))
-            {
-                sim.FoundPostDate = UrlUtils.GetMonthOutOfUrl(sim.UrlToFoundArticle);
-                hasUpdatedDate = true;
-                onlyFoundMonth = true;
-            }
-            if (sim.OriginalPostDate == DateTime.MinValue && UrlUtils.UrlHasTotalDate(sim.UrlToOriginalArticle))
-            {
-                sim.OriginalPostDate = UrlUtils.GetDateOutOfUrl(sim.UrlToOriginalArticle);
-                hasUpdatedDate = true;
-            }
-            else if (sim.OriginalPostDate == DateTime.MinValue && UrlUtils.UrlHasMonth(sim.UrlToOriginalArticle))
-            {
-                sim.OriginalPostDate = UrlUtils.GetMonthOutOfUrl(sim.UrlToOriginalArticle);
-                hasUpdatedDate = true;
-                onlyFoundMonth = true;
-            }
-            Console.WriteLine(sim.ToString());
-            if (hasUpdatedDate && ShouldSwap(sim, onlyFoundMonth ) ) 
+            if (ShouldSwap(sim, onlyFoundMonth , onlyFoundYear) )
             {
                 sim.swap();
-                updatedSimilarities.Add((originalSim,sim));
-            }else if (hasUpdatedDate)
-            {
-                updatedSimilarities.Add((originalSim,sim));
+                hasSwapped= true;
             }
-            Console.WriteLine("------");
+            updatedSimilarities.Add((originalSim,sim, hasSwapped));
+            Console.WriteLine("---+++---");
         }
+        
+        Console.WriteLine("Updated similarities, now saving");
         _similarityService.UpdateSimilarityAfterSwap(updatedSimilarities);
+    }
+
+    public (DateTime, bool, bool, bool) GetDateFromUrl(string url, DateTime date,  bool hasUpdated, bool foundMonth, bool foundYear)
+    {
+        if (UrlUtils.UrlHasTotalDate(url))
+        {
+            date = UrlUtils.GetDateOutOfUrl(url);
+            hasUpdated = true;
+        }
+        else if (UrlUtils.UrlHasMonth(url))
+        {
+            date = UrlUtils.GetMonthOutOfUrl(url);
+            hasUpdated = true;
+            foundMonth = true;
+        }
+        else if (UrlUtils.UrlHasDate(url))
+        {
+            date = UrlUtils.GetYearOutOfUrlAsDate(url);
+            hasUpdated = true;
+            foundYear = true;
+        }
+        return (date, hasUpdated, foundMonth, foundYear);
     }
 }

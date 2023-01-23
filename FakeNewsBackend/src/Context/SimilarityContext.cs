@@ -11,6 +11,7 @@ public class SimilarityContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseNpgsql(Config.GetConnectionString("DatabaseConnectionString"));
+        optionsBuilder.EnableSensitiveDataLogging();
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,6 +29,10 @@ public class SimilarityContext : DbContext
         modelBuilder.Entity<Similarity>()
             .Property(c => c.OriginalLanguage)
             .HasConversion<string>();
+        modelBuilder.Entity<Similarity>()
+            .Property(s => s.Timestamp)
+            .IsRowVersion();
+
         modelBuilder.HasDefaultSchema("public");
         base.OnModelCreating(modelBuilder);
     }

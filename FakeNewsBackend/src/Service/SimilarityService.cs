@@ -1,7 +1,9 @@
 ﻿using FakeNewsBackend.Context;
 using FakeNewsBackend.Domain;
+using FakeNewsBackend.Domain.DTO;
 using FakeNewsBackend.Service.Interface;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace FakeNewsBackend.Service;
 public class SimilarityService : ISimilarityService
@@ -55,7 +57,7 @@ public class SimilarityService : ISimilarityService
         {
             return context.Similarities.Where(sim => 
                 sim.FoundPostDate == DateTime.MinValue ||
-                sim.OriginalPostDate == DateTime.MinValue).ToList();
+                sim.OriginalPostDate == DateTime.MinValue).Distinct().ToHashSet();
         }
     }
 
@@ -116,26 +118,78 @@ public class SimilarityService : ISimilarityService
             return result != null;
         }
     }
-
-    public void UpdateSimilarityAfterSwap(IEnumerable<((string, string), Similarity updated)> similarities)
+    public bool SimilarityExists(Similarity similarity)
     {
+        using (var context = new SimilarityContext())
+        {
+            return context.Similarities.Any(sim => sim.Equals(similarity));
+        }
+    }
+    public Similarity FindSimilarity(int originalId, int foundId, string originalUrl, string foundUrl)
+    {
+        using (var context = new SimilarityContext())
+        {
+            return context.Similarities.First(sim => 
+                sim.OriginalWebsiteId == originalId && 
+                sim.FoundWebsiteId == foundId &&
+                sim.UrlToOriginalArticle == originalUrl &&
+                sim.UrlToFoundArticle == foundUrl);
+        }
+    }
+
+    public Similarity GetSimilarityByKeys(SimilarityIds ids)
+    {
+        using (var context = new SimilarityContext())
+        {
+            return context.Similarities.First(sim =>
+                sim.OriginalWebsiteId == ids.originalId &&
+                sim.FoundWebsiteId == ids.foundId &&
+                sim.UrlToOriginalArticle == ids.originalUrl &&
+                sim.UrlToFoundArticle == ids.foundUrl);
+        }
+    }
+
+    public void UpdateSimilarityAfterSwap(IEnumerable<(SimilarityIds similarityIds, Similarity updated, bool isUpdated)> similarities)
+    {
+        Console.WriteLine(similarities.Count());
+        var totalSwapped = 0;
         using(var context = new SimilarityContext())
         {
             using (var transaction = context.Database.BeginTransaction())
             {
                 try
                 {
-                    foreach(var (original, updated) in similarities)
+                    foreach(var (original, updated, isUpdated) in similarities)
                     {
-                        if (original.Item1 == updated.UrlToOriginalArticle)
+                        /*if (!isUpdated && original.originalUrl == updated.UrlToOriginalArticle && 
+                            original.foundUrl == updated.UrlToFoundArticle && (
+                            original.originalDate != updated.OriginalPostDate || original.foundDate != updated.FoundPostDate) &&
+                            !context.ChangeTracker.Entries<Similarity>().Any(e => e.Entity == updated))
                         {
+                            context.Entry(updated).Property("Timestamp").OriginalValue = updated.Timestamp;
+                            context.Entry(updated).State = EntityState.Detached;
                             context.Similarities.Update(updated);
                             continue;
                         }
-
-                        var dbsim = GetSimilarityByLinks(original.Item1, original.Item2);
-                        context.Similarities.Remove(dbsim);
-                        context.Similarities.Add(updated);
+                        */
+                        try
+                        {
+                            var dbsim = GetSimilarityByKeys(original);
+                            context.Entry(dbsim).Property("Timestamp").OriginalValue = dbsim.Timestamp;
+                            context.Entry(dbsim).Reload();
+                            context.Similarities.Remove(dbsim);
+                        
+                            if (SimilarityExists(updated))
+                            {
+                                context.Similarities.Update(updated);
+                                continue;
+                            }
+                            context.Similarities.Add(updated);
+                        }catch(Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+                        
                     }
                     context.SaveChanges();
                     transaction.Commit();
@@ -151,6 +205,11 @@ public class SimilarityService : ISimilarityService
                     {
                         Console.WriteLine("Unable to save changes. The similarity was deleted by another user.");
                     }
+                }
+                catch (DbUpdateException e) 
+                {
+                    Console.WriteLine(e);
+                    transaction.Rollback();
                 }
             }
         }

@@ -1,4 +1,5 @@
 ﻿using FakeNewsBackend.Common.Types;
+using System.ComponentModel.DataAnnotations;
 
 namespace FakeNewsBackend.Domain;
 
@@ -13,6 +14,8 @@ public class Similarity
     public Language FoundLanguage { get; set; }
     public DateTime OriginalPostDate { get; set; }
     public DateTime FoundPostDate { get; set; }
+    [Timestamp]
+    public byte[] Timestamp { get; set; }
 
 
     public void swap()
@@ -21,6 +24,27 @@ public class Similarity
         (UrlToOriginalArticle, UrlToFoundArticle) = (UrlToFoundArticle, UrlToOriginalArticle);
         (OriginalLanguage, FoundLanguage) = (FoundLanguage, OriginalLanguage);
         (OriginalPostDate, FoundPostDate)= (FoundPostDate, OriginalPostDate);
+    }
+
+    protected bool Equals(Similarity other)
+    {
+        return OriginalWebsiteId == other.OriginalWebsiteId &&
+               FoundWebsiteId == other.FoundWebsiteId &&
+               UrlToOriginalArticle == other.UrlToOriginalArticle &&
+               UrlToFoundArticle == other.UrlToFoundArticle;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((Similarity)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(OriginalWebsiteId, FoundWebsiteId, UrlToOriginalArticle, UrlToFoundArticle);
     }
 
     public string ToString()
