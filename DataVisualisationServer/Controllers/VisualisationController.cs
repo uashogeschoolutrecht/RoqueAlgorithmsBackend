@@ -50,7 +50,7 @@ public class VisualisationController : ControllerBase
         SemaphoreSlim semaphore = new SemaphoreSlim(6);
         var path = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName +
                    "/graph.json";
-       
+
         var sims = _similarityController.GetAllSimilarities()
             .Where(s => s.SimilarityScore >= threshold).ToList();
         Console.WriteLine("Filtering websites");
@@ -108,34 +108,32 @@ public class VisualisationController : ControllerBase
         Console.WriteLine("Done with linking");
         nodes = nodes.Where(node => InLinks(links, node))
             .ToList();
-        Console.WriteLine($"Making object out of {nodes.Count} nodes");
-        var nodeObjs = nodes.Select(website => new 
-        {
-            website.id,
-            website.label,
-            website.totalArticles,
-            website.amountOfConnections,
-            website.totalArticlesScraped
-        }).ToArray();
-        Console.WriteLine($"Making objects out of {links.Count} links");
-        var linkObjs = links.Select(l => new
-        {
-            l.source,
-            l.target,
-            l.amountOfCopies,
-            l.similarities,
-        }).ToArray();
         Console.WriteLine("Making Json file");
         var file = new {
-            nodes = nodeObjs,
-            links = linkObjs
+            nodes = nodes.Select(website => new 
+            {
+                website.id,
+                website.label,
+                website.totalArticles,
+                website.amountOfConnections,
+                website.totalArticlesScraped
+            }).ToArray(),
+            links = links.Select(l => new
+            {
+                l.source,
+                l.target,
+                l.amountOfCopies,
+                l.similarities,
+            }).ToArray()
         };
         var opt = new JsonSerializerOptions();
         opt.WriteIndented = true;
         
 
-        string filecontent = JsonSerializer.Serialize(file,opt);
+        var filecontent = JsonSerializer.Serialize(file,opt);
+
         System.IO.File.WriteAllText(path, filecontent);
+
         return filecontent;
 
     }
