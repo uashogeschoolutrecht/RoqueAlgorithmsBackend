@@ -19,8 +19,8 @@ namespace FakeNewsBackend.Common
         {
             Language.EN => "english",
             Language.NL => "dutch",
-            Language.UNKNOWN => "dutch",
-            _ => "dutch"
+            Language.UNKNOWN => "unknown",
+            _ => "unknown"
         };
     }
 }

@@ -47,12 +47,11 @@ public class VisualisationController : ControllerBase
     [NonAction]  
     public string GetGraphData(Single threshold = 0.0f)
     {
-        SemaphoreSlim semaphore = new SemaphoreSlim(6);
         var path = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName +
                    "/graph.json";
 
         var sims = _similarityController.GetAllSimilarities()
-            .Where(s => s.SimilarityScore >= threshold).ToList();
+            .Where(s => s.SimilarityScore >= threshold && s.SimilarityScore < 1).ToList();
         Console.WriteLine("Filtering websites");
         var websites = _webController.GetAllWebsites()
             .Where(w => sims.Any(s => s.OriginalWebsiteId == w.Id || s.FoundWebsiteId == w.Id))
@@ -74,7 +73,6 @@ public class VisualisationController : ControllerBase
             Console.WriteLine($"now on websites: {website1.Id} -- loop i :{i}");
             Parallel.ForEach(websites, parallelOptions, website2 =>
             {
-                semaphore.Wait();
                 try
                 {
                     if (website1 == website2)
@@ -84,8 +82,13 @@ public class VisualisationController : ControllerBase
 
                     if (linksBetweenWebsites.Length == 0)
                         return;
-                    GetNode(nodes, website1)?.Increment();
-                    GetNode(nodes, website2)?.Increment();
+                    var node1 = GetNode(nodes, website1);
+                    var node2 = GetNode(nodes, website2);
+                    node1.Increment();
+                    node2.Increment();
+                    node1.AddSimilarities(linksBetweenWebsites.Length);
+                    node2.AddSimilarities(linksBetweenWebsites.Length);
+
                     links.Add(new Link
                     {
                         source = website1.Id,
@@ -98,27 +101,25 @@ public class VisualisationController : ControllerBase
                 {
                     return;
                 }
-                finally
-                {
-                    semaphore.Release();
-                }
-
             });
         }
         Console.WriteLine("Done with linking");
-        nodes = nodes.Where(node => InLinks(links, node))
-            .ToList();
+        var filterdNodes = nodes.Where(node => node.amountOfConnections > 5).ToList();
+        var filterdNodesIds = filterdNodes.Select(node => node.id).ToHashSet();
+        var filterdLinks = links.Where(link => (filterdNodesIds.Contains(link.source) && filterdNodesIds.Contains(link.target))).ToList();
+
         Console.WriteLine("Making Json file");
         var file = new {
-            nodes = nodes.Select(website => new 
+            nodes = filterdNodes.Select(website => new 
             {
                 website.id,
                 website.label,
                 website.totalArticles,
                 website.amountOfConnections,
-                website.totalArticlesScraped
+                website.totalArticlesScraped,
+                website.totalSimilarities
             }).ToArray(),
-            links = links.Select(l => new
+            links = filterdLinks.Select(l => new
             {
                 l.source,
                 l.target,
@@ -194,7 +195,8 @@ public class VisualisationController : ControllerBase
             label = UrlUtils.RemoveProtocol(website.Url),
             totalArticles = website.NumberOfArticles,
             totalArticlesScraped = website.NumberOfArticlesScraped,
-            amountOfConnections = 0
+            amountOfConnections = 0,
+            totalSimilarities = 0
         };
     }
 
